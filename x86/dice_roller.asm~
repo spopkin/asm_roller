@@ -33,6 +33,14 @@ usage0len 	equ 	($-usage0)	; Its length.
 usage1		db	" <Number of Dice> <Number of Sides>",0Ah
 usage1len 	equ 	($-usage1)	; Its length.
 
+; The allocation for the number of dice to roll
+nDice		dd	0		
+
+; The allocation for the number of sides per die
+nSides		dd	0	
+
+invalidInts	db	"Invalid number of sides/dice",0Ah
+iilen	 	equ 	($-invalidInts)	; Its length.
 
 ;-------------------------------------------------------------------------------
 segment .text 
@@ -44,12 +52,15 @@ _start:
 	cmp eax,min_args		; Later replace this with min and max
 	jne bad_args			; comparisons.
 ; Ready to parse some integers now.
-
+	pop ebx				; Throw away the file name.
+	pop ebx				; Get String numDice.
+	mov edi,nDice			; Target numDice as opposed to nSides.
+	call parseInt			; Turn that into an Int.
 
 ; Exit success
 exit:
 	mov eax,exitcmd			; Prepare to exit 0
-	mov ebx,exit_succ
+;	mov ebx,exit_succ
 	int 80h
 
 ;-------------------------------------------------------------------------------
@@ -66,8 +77,9 @@ bad_args:
 ; Prepare to print the file name
 loop_ba0:
 	inc edx				; The length is one greater.
-	cmp byte [ecx + edx],0		; Check if not null.
+	cmp byte [ecx + edx-1],0	; Check if not null.
 	jne loop_ba0
+	dec edx				; handle the preincrement fencepost
 	call writeErr
 					; Now, print the rest of that string
 	mov ecx,usage1
@@ -78,12 +90,60 @@ quit:
 	mov eax,exitcmd			; Prepare to exit 1
 	mov ebx,exit_fail		
 	int 80h
+
+; Bad number of sides/dice
+bad_ints:
+	mov ecx,invalidInts		; Set what to write
+	mov edx,iilen			; Set length to write
+	call writeErr	
+	jmp quit
+
 ;-------------------------------------------------------------------------------
 ; Helper Functions
 ;-------------------------------------------------------------------------------
 ; writeErr: prints whatever is pointed by ecx out to length edx
+; params:
+;	ecx - the string to write's pointer
+;	edx - the length to write
 writeErr:
 	mov eax,writecmd	
 	mov ebx,stderr
 	int 80h
 	ret
+
+; writeValid: prints whatever is pointed by ecx out to length edx
+; params:
+;	ecx - the string to write's pointer
+;	edx - the length to write
+writeValid:
+	mov eax,writecmd	
+	mov ebx,stdout
+	int 80h
+	ret
+
+
+
+;; parseInt: attempts to take a string and produce an integer.
+;; params:
+;;	ebx - the string pointer to convert
+;;	edi - what to put it into
+;; outputs:
+;;	[edi] - the integer produced
+;parseInt:
+;	mov eax,0			; Start at 0
+;	mov ecx,10			; Keep 10 in ecx for multiplication
+;	mov esi,ebx			; Preserve the start of the string
+;loop_pa0:
+;	cmp byte [ebx - 1],0		; if current position is null
+;	jne loop_pa0			; then stop looping
+;	dec ebx				; fencepost issue
+;
+;	; test the parse
+;	mov ebx,eax
+;	jmp exit 
+;	ret	
+
+
+
+
+	
