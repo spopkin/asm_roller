@@ -18,3 +18,9 @@ This software should be pretty trivial, so the plan is to:
 4. Make the non-x86 version(s).
 5. Go play D&D with it.
 
+## Building
+cd FLAVOR_OF_CHOICE/
+make
+
+- the C version will require gcc
+- the x86 assembly will require nasm
