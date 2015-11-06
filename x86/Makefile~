@@ -1,9 +1,14 @@
-BIN=dice_roller
+BIN=dice_roller 
+ASFLAGS=-f elf 
 
 all: $(BIN)
 clean:
 	rm $(BIN)
 
-dice_roller: dice_roller.asm
-	nasm -o $@ $<
-
+dice_roller.out: dice_roller.asm
+	nasm $(ASFLAGS) $<
+	
+	
+dice_roller: dice_roller.out	
+	ld -s -o $@ $< 
+	chmod 0777 $@
