@@ -42,6 +42,15 @@ nSides		dd	0
 invalidInts	db	"Invalid number of sides/dice",0Ah
 iilen	 	equ 	($-invalidInts)	; Its length.
 
+diceNumSelect	db	"You have selected to roll "
+dnumsellen 	equ 	($-diceNumSelect)
+
+diceMid		db	" x D"
+dmidlen 	equ 	($-diceMid)	
+
+diceEnd		db	" dice.",0Ah
+dEndLen 	equ 	($-diceEnd)	
+
 ;-------------------------------------------------------------------------------
 segment .text 
 global _start
@@ -51,11 +60,44 @@ _start:
 	pop eax				; Check the number of arguments.
 	cmp eax,min_args		; Later replace this with min and max
 	jne bad_args			; comparisons.
-; Ready to parse some integers now.
+
+; Ready to do things now.
 	pop ebx				; Throw away the file name.
+
+; here we prepare to write parts of the dice string
+	mov ecx,diceNumSelect		; Prepare to write the string about dice
+	mov edx,dnumsellen		; length ready
+	call writeValid
+
+; Parse the number of dice	
 	pop ebx				; Get String numDice.
-;	mov edi,nDice			; Target numDice as opposed to nSides.
-;	call parseInt			; Turn that into an Int.
+	mov edi,nDice			; Target numDice as opposed to nSides.
+	call parseInt			; Turn that into an Int.
+
+; Prepare to write the number of dice we just parsed	
+	mov ecx,ebx
+	mov edx,esi			; prepare to write	
+	call writeValid			; write valid number
+
+; Write the middle part of the string.
+	mov ecx,diceMid			; prepare to write the middle of the string
+	mov edx,dmidlen			; including its length
+	call writeValid	
+
+; Now, we will need the number of sides per die
+	pop ebx				; get the second argument
+	mov edi,nSides			; target number of sides
+	call parseInt			; parse the number of sides
+
+; Write that new number
+	mov ecx,ebx
+	mov edx,esi			; prepare to write	
+	call writeValid			; write valid number
+
+; Prepare to write the end of the dice string
+	mov ecx,diceEnd			; get what to write
+	mov edx,dEndLen			; get the length
+	call writeValid
 
 ; Exit success
 exit:
@@ -121,27 +163,47 @@ writeValid:
 	int 80h
 	ret
 
+; parseInt: attempts to take a string and produce an integer.
+; Due to pains regarding not wiping the wrong registers, it will behave 
+; somewhat like a C function, in that it will push and restore registers.
+; params:
+;	ebx - the string pointer to convert
+;	edi - what to put it into
+; outputs:
+;	[edi] - the integer produced
+;	esi - the length of the string (so we can print it later)
+parseInt:
+	push eax			; preserve eax, as we will use it
+	mov eax,0			; set it to 0
+	push ecx			; preserve ecx
+;	mov ecx,10			; We'll use it to ramp up the base
+;	mov edx,0			; strlen starts at 0
+	push edx			; preserve edx
+	mov esi,0			; strlen starts at 0
+	mov ecx,0			; avoid leftovers contaminating current char
+loop_pa0:
+	mov cl,[ebx+esi]		; get the current character
+	
+	cmp cl,0			; if null, break
+	je break_pa0			
+	sub cl,"0"			; else if too low, bad int, also shift it to value
+	jl bad_ints			
+	cmp cl,9			; else if too high, bad int
+	jg bad_ints			
+	inc esi				; good enough, look at the next one.	
 
-
-;; parseInt: attempts to take a string and produce an integer.
-;; params:
-;;	ebx - the string pointer to convert
-;;	edi - what to put it into
-;; outputs:
-;;	[edi] - the integer produced
-;parseInt:
-;	mov eax,0			; Start at 0
-;	mov ecx,10			; Keep 10 in ecx for multiplication
-;	mov esi,ebx			; Preserve the start of the string
-;loop_pa0:
-;	cmp byte [ebx - 1],0		; if current position is null
-;	jne loop_pa0			; then stop looping
-;	dec ebx				; fencepost issue
-;
-;	; test the parse
-;	mov ebx,eax
-;	jmp exit 
-;	ret	
+	mov edx,10
+	mul edx				; shift our current number left one digit
+	add eax,ecx			; add the new digit to the number	
+	
+	jmp loop_pa0			; loop back around	
+break_pa0:
+	mov [edi],eax			; store our int
+	pop edx				; retrieve edx
+	pop ecx				; retrieve ecx's original value
+	pop eax				; retrieve eax's original value
+	
+	ret	
 
 
 
