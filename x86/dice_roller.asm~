@@ -23,7 +23,7 @@ stdout equ 1
 stderr equ 2
 exitcmd equ 1
 writecmd equ 4
-intSize equ 7
+intSize equ 10
 ;-------------------------------------------------------------------------------
 segment .data
 ;-------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ dEndLen 	equ 	($-diceEnd)
 rollStart	db	"Roll "
 rollStartLen 	equ 	($-rollStart)	
 
-intBuffer	times	intSize	db	0
+intBuffer	times	intSize	db	"0"
 
 base		dd	10		; the numeric base we are working in,
 ; currently this is constrained to 10, but maybe someday i'll mess with this.
@@ -93,7 +93,6 @@ _start:
 ;	mov ecx,ebx
 ;	mov edx,ecx
 
-	
 	mov ecx,ebx			; prepare to write whatever our input number was
 	mov edx,esi			; prepare to write	
 	call writeValid			; write valid number
@@ -110,9 +109,16 @@ _start:
 	call parseInt			; parse the number of sides
 
 ; Write that new number
-	mov ecx,ebx
-	mov edx,esi			; prepare to write	
-	call writeValid			; write valid number
+;	mov ecx,ebx
+;	mov edx,esi			; prepare to write	
+;	call writeValid			; write valid number
+
+	mov eax,nSides			; Prepare to convert nSides to a string
+	call intToString		; Do the conversion.
+	mov edx,ecx			; Set the new string length 
+	mov ecx,eax			; Set the new string as what to write
+	call writeValid			; Write the new string.
+	
 
 ; Prepare to write the end of the dice string
 	mov ecx,diceEnd			; get what to write
@@ -241,12 +247,53 @@ break_pa0:
 	pop eax				; retrieve eax's original value
 	ret	
 
-; intToString: takes an integer in eax and converts it into a string of up to 7 bytes
+; intToString: takes an integer in eax and converts it into a string of up to intSize bytes
 ; it stores the results in [intBuffer], and returns a pointer to the front of the
-; actual string in eax.  It also returns the length of the string in ecx.
+; actual string in eax.  It also returns the length of the string in ecx, and a pointer in edi.
 ; params:
-;	eax - what to print
+;	eax - what to convert
+; returns:
+;	eax - the new pointer
+;	ecx - length
 intToString:
+	push edi			; This will be a temporary pointer to our array
+	push ebx			; Preserve ebx, as it is not a return
+	mov ecx,intSize 		; Ecx will be a counter
+	mov edi,intBuffer+intSize-1	; Edi is a tail pointer to our char array
+
+loop_its:
+	mov edx,0			; We only want to divide eax, not edx with eax.
+	mov ebx,intSize			; Prepare for division
+	div ebx				; divide eax
+; Now, edx is the remainder, eax is what is left of the original number
+	add dl,"0"			; Shift up dl to be a char instead of 8b int.
+	mov [edi],dl			; This means that dl is the char of the target number	
+
+; TODO include logic for breaking if eax is zero
+
+; Next up, change target position, also loop back
+	dec ecx
+	dec edi				; Look at character n-1 now.
+	cmp edi,intBuffer-1		; If we've hit the front, then
+	jnz loop_its
+
+;	loop loop_its			; Cycle back around
+
+; Turn ecx into the length instead of size - length
+	mov ecx,intSize		; stub version
+
+; Prepare our return value, and fix our registers
+;	mov eax,edi			; return value
+	mov eax,intBuffer	; stub version
+	pop ebx				; We no longer need the placeholder
+	pop edi				; We no longer need the temporary pointer
+	ret
+
+
+
+
+
+
 ;	push ebx			; we'll need ebx in a minute for indexing
 ;	push ecx			; we'll need ecx in a minute for looping
 	push edx			; we'll need edx in a minute 
