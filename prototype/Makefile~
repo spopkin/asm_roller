@@ -1,4 +1,4 @@
-VFLAGS=-Wall
+VFLAGS=-Wall -std=c11
 BIN=dice_roller
 
 all: $(BIN)
