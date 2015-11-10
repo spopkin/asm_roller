@@ -64,6 +64,8 @@ lineTerm	db	0Ah		; Good for printing out newlines.
 
 intBuffer	times	(intSize+1)	db	"0"
 
+
+
 base		dd	10		; the numeric base we are working in,
 ; currently this is constrained to 10, but maybe someday i'll mess with this.
 ; I allocated this so I could divide directly from memory.
