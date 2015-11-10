@@ -34,36 +34,39 @@ usage0len 	equ 	($-usage0)	; Its length.
 usage1		db	" <Number of Dice> <Number of Sides>",0Ah
 usage1len 	equ 	($-usage1)	; Its length.
 
-; The allocation for the number of dice to roll
-nDice		dd	0		
+; Dice values and sum value.
+total		dd	0		; The total value of all rolls so far.
+nDice		dd	0		; The number of dice to roll.
+nSides		dd	0		; The number of sides on each die.
 
-; The allocation for the number of sides per die
-nSides		dd	0	
-
+; Warning messages for inputs.
 invalidInts	db	"Invalid number of sides/dice",0Ah
-iilen	 	equ 	($-invalidInts)	; Its length.
+iilen	 	equ 	($-invalidInts)	
+doE		db	0Ah,0Ah,"Number of Sides/dice was" 
+		db	"too big, was zero, or was empty.",0Ah,0Ah
+doELen		equ	($-doE)
 
+; The output string components for selected number of sides and dice. 
 diceNumSelect	db	"You have selected to roll "
 dnumsellen 	equ 	($-diceNumSelect)
-
 diceMid		db	" x D"
 dmidlen 	equ 	($-diceMid)	
-
 diceEnd		db	" dice.",0Ah
 dEndLen 	equ 	($-diceEnd)	
 
-rollStart	db	"Roll "
-rollStartLen 	equ 	($-rollStart)	
+rollStart	db	"Roll "		; Print out at the start of each roll
+rollStartLen 	equ 	($-rollStart)	; The length of that.
+rollMid		db	": "		; Separate the roll number from value
+rollMidLen	equ	($-rollMid)	; The length of that
+rollNumber	dd	0		; What number roll is currently in play.
+
+lineTerm	db	0Ah		; Good for printing out newlines.
 
 intBuffer	times	(intSize+1)	db	"0"
 
 base		dd	10		; the numeric base we are working in,
 ; currently this is constrained to 10, but maybe someday i'll mess with this.
-
-doE		db	0Ah,0Ah,"Number of Sides/dice was" 
-		db	"too big, was zero, or was empty.",0Ah,0Ah
-doELen		equ	($-doE)
-
+; I allocated this so I could divide directly from memory.
 ;-------------------------------------------------------------------------------
 segment .text 
 global _start
@@ -80,7 +83,7 @@ _start:
 ; here we prepare to write parts of the dice string
 	mov ecx,diceNumSelect		; Prepare to write the string about dice
 	mov edx,dnumsellen		; length ready
-	call writeValid
+	call writeValid			; Write the beginning of dice selected.
 
 ; Parse the number of dice	
 	pop ebx				; Get String numDice.
@@ -97,7 +100,7 @@ _start:
 ; Write the middle part of the string.
 	mov ecx,diceMid			; prepare to write the middle of the string
 	mov edx,dmidlen			; including its length
-	call writeValid	
+	call writeValid			; Write the " x D" part of the string.
 
 ; Now, we will need the number of sides per die
 	pop ebx				; get the second argument
@@ -115,12 +118,23 @@ _start:
 ; Prepare to write the end of the dice string
 	mov ecx,diceEnd			; get what to write
 	mov edx,dEndLen			; get the length
-	call writeValid
-
-mov ebx,[nSides]
+	call writeValid			; Write the end of the dice seleciton string.
 
 ; Prepare to do rolls
+	mov ecx,[nDice]			; For each die chosen to roll, roll once.
+mainLoop:
+	push ecx			; Preserve our loop counter
+
+	mov ecx,rollStart		; Prepare to write the start 
+	mov edx,rollStartLen		; of our roll string.
+	call writeValid			; Write "Roll: "
 	
+	mov ecx,lineTerm		; Prepare a newline character
+	mov edx,1			; Get ready to write it.
+	call writeValid			; Write it.
+	
+	pop ecx				; Retrieve the loop counter for usage
+	loop mainLoop			; Loop back around.	
 
 ; Exit success
 exit:
@@ -255,8 +269,8 @@ lopits:					; Loop back to here to handle each character
 	mov [ebx+ecx],dl		; Store that character in our string to return.
 	cmp eax,0			; If the value of the int left in eax is 0, then
 	je breakits			; we have hit the end of our int, so break.
-	cmp ecx,0			; If the value of ecx hits 0, then we have hit the
-	je breakits			; end of our int, so break.  <redundant?>
+;	cmp ecx,0			; If the value of ecx hits 0, then we have hit the
+;	je breakits			; end of our int, so break.  <redundant?>
 	dec ecx				; Reduce the position in the string that we fill.
 	jmp lopits			; Continue the loop.
 
