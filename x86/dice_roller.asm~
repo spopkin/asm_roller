@@ -273,35 +273,18 @@ lopits:
 
 
 breakits:
-	mov eax,ecx			; put the string offset in eax
-	add eax,ebx			; now eax should be the front of the string
-	sub ecx,intBuffer		; put the length - intsize - length into ecx 
-	neg ecx				; now ecx should be the string length
+	mov ebx,ecx
+	jmp exit	
+
+;	mov eax,ecx			; put the string offset in eax
+;	add eax,ebx			; now eax should be the front of the string
+	
+;	sub ecx,intBuffer		; put the length - intsize - length into ecx 
+;	neg ecx				; now ecx should be the string length
 ;stub return fixes
-	;mov eax,intBuffer
-	;mov ecx,intSize
+;	mov eax,intBuffer
+;	mov ecx,intSize
 	ret
 
 
 
-
-
-
-	mov ebx,intBuffer		; point at the appropriate pointer
-	mov ecx,intSize-1		; make sure that we have the appropriate value to add
-;lopits:					; loop to here 
-	mov edx,0			; avoid corrupting our selected char each iteration
-	div dword [base]		; get current char, and get the rest of the number
-	add dl,"0"			; convert the current char to be printable
-	mov [ebx+ecx],dl		; put it into our string
-	cmp eax,0			; if eax is 0, then break, else continue
-	je breakits			
-	cmp ecx,0			; if we have just written to the front of the string
-	je breakits			; then that's it for the loop.
-	dec ecx				; decrement where in the string we need to update
-;breakits:
-	mov eax,ecx			; put the front of the string into eax
-	sub ecx,intBuffer		; put the length - intsize - length into ecx 
-	neg ecx				; now ecx should be the string length
-
-	ret
