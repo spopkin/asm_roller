@@ -88,15 +88,15 @@ _start:
 	call parseInt			; Turn that into an Int.
 
 ; Prepare to write the number of dice we just parsed	
+;	mov ecx,ebx			; prepare to write whatever our input number was
+;	mov edx,esi			; prepare to write	
+;	call writeValid			; write valid number
 
-;call intToString			; reset what we plan to write
-;	mov ecx,ebx
-;	mov edx,ecx
-
-	mov ecx,ebx			; prepare to write whatever our input number was
-	mov edx,esi			; prepare to write	
-	call writeValid			; write valid number
-
+	mov eax,[nDice]			; Prepare to write the fresh number of dice.
+	call intToString		; Make a string out of it.
+	mov edx,ecx			; Put the length in the appropriate position.
+	mov ecx,eax			; Put the pointer in the appropriate position.
+	call writeValid			; Write the number of dice parsed.
 
 ; Write the middle part of the string.
 	mov ecx,diceMid			; prepare to write the middle of the string
@@ -254,36 +254,26 @@ break_pa0:
 ;	eax - a string pointer to what to print out
 ;	ecx - the length of the string to print out
 intToString:
-
-;	mov ebx,eax
-;	jmp exit
 	mov ecx,intSize-1		; so we can count down the size of the string
 	mov ebx,intBuffer		; the front of the string
-lopits:
-	mov edx,0
-	div dword [base]	
-	add dl,"0"
-	mov [ebx+ecx],dl
-	cmp eax,0
-	je breakits
-	cmp ecx,0
-	je breakits
-	dec ecx
-	jmp lopits
-
+lopits:					; Loop back to here to handle each character
+	mov edx,0			; Prevent problems with division.
+	div dword [base]		; Divide our int by our base to get values & remainder
+	add dl,"0"			; Convert our remainder into the rightmost character.
+	mov [ebx+ecx],dl		; Store that character in our string to return.
+	cmp eax,0			; If the value of the int left in eax is 0, then
+	je breakits			; we have hit the end of our int, so break.
+	cmp ecx,0			; If the value of ecx hits 0, then we have hit the
+	je breakits			; end of our int, so break.  <redundant?>
+	dec ecx				; Reduce the position in the string that we fill.
+	jmp lopits			; Continue the loop.
 
 breakits:
-	mov ebx,ecx
-	jmp exit	
-
-;	mov eax,ecx			; put the string offset in eax
-;	add eax,ebx			; now eax should be the front of the string
+	mov eax,ecx			; put the string offset in eax
+	add eax,ebx			; now eax should be the front of the string
 	
-;	sub ecx,intBuffer		; put the length - intsize - length into ecx 
-;	neg ecx				; now ecx should be the string length
-;stub return fixes
-;	mov eax,intBuffer
-;	mov ecx,intSize
+	sub ecx,intSize			; put the length - intsize - length into ecx 
+	neg ecx				; now ecx should be the string length
 	ret
 
 
