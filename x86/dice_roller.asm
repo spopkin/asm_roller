@@ -132,28 +132,40 @@ _start:
 	int 80h				;, but zero seems like a safe default.
 
 	mov ebx,eax	; stub so we return the descriptor.	
-	jmp exit
+;	jmp exit
 
 ; Prepare to do rolls
 	mov ecx,[nDice]			; For each die chosen to roll, roll once.
 mainLoop:
 	push ecx			; Preserve our loop counter
 
+	push ebx			; preserve our file handle
+
 	mov ecx,rollStart		; Prepare to write the start 
 	mov edx,rollStartLen		; of our roll string.
 	call writeValid			; Write "Roll: "
 	
+	pop ebx				; Get our file handle back.	
+	push ebx			; preserve our file handle
+	
 	mov ecx,lineTerm		; Prepare a newline character
 	mov edx,1			; Get ready to write it.
 	call writeValid			; Write it.
+
+	pop ebx				; Get our file handle back.	
 	
 	pop ecx				; Retrieve the loop counter for usage
 	loop mainLoop			; Loop back around.	
 
+; Close the file
+	mov eax,6			; Close operation
+	;ebx is already our file handle
+	int 80h				; Do it.	
+
 ; Exit success
 exit:
 	mov eax,exitcmd			; Prepare to exit 0
-;	mov ebx,exit_succ
+	mov ebx,exit_succ
 	int 80h
 
 ;-------------------------------------------------------------------------------
