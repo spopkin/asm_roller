@@ -24,6 +24,7 @@ stderr equ 2
 exitcmd equ 1
 writecmd equ 4
 intSize equ 10
+o_rdonly equ 0				; see /usr/include/asm-generic/fcntl.h
 ;-------------------------------------------------------------------------------
 segment .data
 ;-------------------------------------------------------------------------------
@@ -64,6 +65,7 @@ lineTerm	db	0Ah		; Good for printing out newlines.
 
 intBuffer	times	(intSize+1)	db	"0"
 
+randFile	db	"/dev/urandom",0	; Where our randomness is.
 
 
 base		dd	10		; the numeric base we are working in,
@@ -121,6 +123,16 @@ _start:
 	mov ecx,diceEnd			; get what to write
 	mov edx,dEndLen			; get the length
 	call writeValid			; Write the end of the dice seleciton string.
+
+; Open the random file.
+	mov eax,5			; Prepare to open the file
+	mov ebx,randFile		; The file is /dev/urandom
+	mov ecx,o_rdonly		; We only need to read it
+	mov edx,0			; Unnecessary, as we don't create the file.
+	int 80h				;, but zero seems like a safe default.
+
+	mov ebx,eax	; stub so we return the descriptor.	
+	jmp exit
 
 ; Prepare to do rolls
 	mov ecx,[nDice]			; For each die chosen to roll, roll once.
