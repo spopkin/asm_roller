@@ -137,35 +137,57 @@ _start:
 ; Prepare to do rolls
 	mov ecx,[nDice]			; For each die chosen to roll, roll once.
 mainLoop:
+	push ebx			; preserve our file handle
 	push ecx			; Preserve our loop counter
 
-	push ebx			; preserve our file handle
-
+; Here we start the roll string.
 	mov ecx,rollStart		; Prepare to write the start 
 	mov edx,rollStartLen		; of our roll string.
-	call writeValid			; Write "Roll: "
-	
-	pop ebx				; Get our file handle back.	
-	push ebx			; preserve our file handle
+	call writeValid			; Write "Roll "
+
+; Here we write the roll number
+	pop ecx				; Get the total rolls - roll number
+	push ecx			; Store our current position again
+	sub ecx,[nDice]			; total_rolls - roll_number - total_rolls
+	neg ecx				; ecx is now the roll number
+	inc ecx				; Index the number from 1, not 0.
+	mov eax,ecx			; Put it in eax so we can make a string.
+	call intToString		; Now eax is the intBuffer pointer.
+	mov edx,ecx			; Place the string length in edx
+	mov ecx,eax			; Place the pointer in ecx
+	call writeValid			; Write the number
+
+; Here we write ": "
+	mov ecx,rollMid			; Prepare to write the middle 
+	mov edx,rollMidLen		; of our roll string.
+	call writeValid			; Write ": "
+
+; Here we read in a value
+
+; Add that value to the total
+
+; Print that value
+
+
 	
 	mov ecx,lineTerm		; Prepare a newline character
 	mov edx,1			; Get ready to write it.
 	call writeValid			; Write it.
 
-	pop ebx				; Get our file handle back.	
 	
 	pop ecx				; Retrieve the loop counter for usage
+	pop ebx				; Get our file handle back.	
 	loop mainLoop			; Loop back around.	
 
 ; Close the file
-	mov eax,6			; Close operation
+;	mov eax,6			; Close operation
 	;ebx is already our file handle
-	int 80h				; Do it.	
+;	int 80h				; Do it.	
 
 ; Exit success
 exit:
 	mov eax,exitcmd			; Prepare to exit 0
-;	mov ebx,exit_succ
+	mov ebx,exit_succ
 	int 80h
 
 ;-------------------------------------------------------------------------------
