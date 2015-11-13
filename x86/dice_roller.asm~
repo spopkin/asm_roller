@@ -148,8 +148,6 @@ mainLoop:
 	call writeValid			; Write "Roll "
 
 ; Here we write the roll number
-;	pop ecx				; Get the total rolls - roll number
-;	push ecx			; Store our current position again
 	mov ecx,[esp]			; Get our roll number
 	sub ecx,[nDice]			; total_rolls - roll_number - total_rolls
 	neg ecx				; ecx is now the roll number
@@ -165,8 +163,6 @@ mainLoop:
 	mov edx,rollMidLen		; of our roll string.
 	call writeValid			; Write ": "
 
-	
-
 ; Here we read in a value
 	mov eax,3			; Prepare to read
 	mov ebx,[esp+4]			; read in from /dev/urandom
@@ -174,17 +170,21 @@ mainLoop:
 	mov edx,4			; Int is 4 bytes
 	int 80h				; Go.
 
+; Mod that value down to what you would expect for it to be
+	mov eax,[current]		; Put our number into eax
+;	mov edx,[nSides]		; Put edx as the number of sides
+;	div edx				; Divide that eax value
+;	mov eax,edx			; The remainder is our roll	
+
 ; Add that value to the total
+	add [total],eax			; Add this number to the total.	
 
 ; Print that value
-	mov eax,ecx			; Put our number into eax
 	call intToString		; Create the appropriate output String.
 	mov edx,ecx			; Place the string length in edx
 	mov ecx,eax			; Place the pointer in ecx
 	call writeValid			; Write the number
 		
-
-	
 	mov ecx,lineTerm		; Prepare a newline character
 	mov edx,1			; Get ready to write it.
 	call writeValid			; Write it.
@@ -192,12 +192,26 @@ mainLoop:
 ;	mov ecx,[esp]			; Put our loop counter in ecx.	
 	pop ecx				; Retrieve the loop counter for usage
 	pop ebx				; Get our file handle back.	
-	loop mainLoop			; Loop back around.	
+	loopw mainLoop			; Loop back around.	
 
 ; Close the file
 	mov eax,6			; Close operation
 	;ebx is already our file handle
 	int 80h				; Do it.	
+
+; Print out our total value now
+	mov eax,[total]			; Get ready for int to string
+	call intToString		; Now, total should be in intBuffer.
+	mov edx,ecx			; Put that length in edx
+	mov ecx,eax			; Put that pointer in eax.
+	call writeValid			; Write that number
+
+
+
+; Write a new line just to look nicer
+	mov ecx,lineTerm		; Prepare a newline character
+	mov edx,1			; Get ready to write it.
+	call writeValid			; Write it.
 
 ; Exit success
 exit:
