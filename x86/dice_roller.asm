@@ -146,8 +146,9 @@ mainLoop:
 	call writeValid			; Write "Roll "
 
 ; Here we write the roll number
-	pop ecx				; Get the total rolls - roll number
-	push ecx			; Store our current position again
+;	pop ecx				; Get the total rolls - roll number
+;	push ecx			; Store our current position again
+	mov ecx,[esp]			; Get our roll number
 	sub ecx,[nDice]			; total_rolls - roll_number - total_rolls
 	neg ecx				; ecx is now the roll number
 	inc ecx				; Index the number from 1, not 0.
@@ -158,11 +159,15 @@ mainLoop:
 	call writeValid			; Write the number
 
 ; Here we write ": "
-	mov ecx,rollMid			; Prepare to write the middle 
-	mov edx,rollMidLen		; of our roll string.
-	call writeValid			; Write ": "
+;	mov ecx,rollMid			; Prepare to write the middle 
+;	mov edx,rollMidLen		; of our roll string.
+;	call writeValid			; Write ": "
+
+	
 
 ; Here we read in a value
+	mov eax,3			; Prepare to read
+	mov ebx,ecx			; read in from /dev/urandom
 
 ; Add that value to the total
 
