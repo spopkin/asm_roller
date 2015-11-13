@@ -39,6 +39,7 @@ usage1len 	equ 	($-usage1)	; Its length.
 total		dd	0		; The total value of all rolls so far.
 nDice		dd	0		; The number of dice to roll.
 nSides		dd	0		; The number of sides on each die.
+current		dd	0		; The most recently read in value.
 
 ; Warning messages for inputs.
 invalidInts	db	"Invalid number of sides/dice",0Ah
@@ -136,6 +137,7 @@ _start:
 
 ; Prepare to do rolls
 	mov ecx,[nDice]			; For each die chosen to roll, roll once.
+	
 mainLoop:
 	push ebx			; preserve our file handle
 	push ecx			; Preserve our loop counter
@@ -159,27 +161,35 @@ mainLoop:
 	call writeValid			; Write the number
 
 ; Here we write ": "
-;	mov ecx,rollMid			; Prepare to write the middle 
-;	mov edx,rollMidLen		; of our roll string.
-;	call writeValid			; Write ": "
+	mov ecx,rollMid			; Prepare to write the middle 
+	mov edx,rollMidLen		; of our roll string.
+	call writeValid			; Write ": "
 
 	
 
 ; Here we read in a value
 	mov eax,3			; Prepare to read
-	mov ebx,ecx			; read in from /dev/urandom
+	mov ebx,[esp+4]			; read in from /dev/urandom
+	mov ecx,current			; Read in the int
+	mov edx,4			; Int is 4 bytes
+	int 80h				; Go.
 
 ; Add that value to the total
 
 ; Print that value
-
+	mov eax,[current]		; Put our number into eax
+	call intToString		; Create the appropriate output String.
+	mov edx,ecx			; Place the string length in edx
+	mov ecx,eax			; Place the pointer in ecx
+	call writeValid			; Write the number
+		
 
 	
 	mov ecx,lineTerm		; Prepare a newline character
 	mov edx,1			; Get ready to write it.
 	call writeValid			; Write it.
 
-	
+;	mov ecx,[esp]			; Put our loop counter in ecx.	
 	pop ecx				; Retrieve the loop counter for usage
 	pop ebx				; Get our file handle back.	
 	loop mainLoop			; Loop back around.	
