@@ -69,6 +69,9 @@ intBuffer	times	(intSize+1)	db	"0"
 randFile	db	"/dev/urandom",0	; Where our randomness is.
 randHandle	dd	4		; A place to put our file handle
 
+endString	db	"The total is: " ; To print out before the total
+endLen		equ	($-endString)	; How long that is.
+
 base		dd	10		; the numeric base we are working in,
 ; currently this is constrained to 10, but maybe someday i'll mess with this.
 ; I allocated this so I could divide directly from memory.
@@ -195,13 +198,17 @@ mainLoop:
 	;ebx is already our file handle
 	int 80h				; Do it.	
 
+; Print the start of the end string.
+	mov ecx,endString		; The end string pointer
+	mov edx,endLen			; Write the correct length of it.
+	call writeValid			; Write.
+
 ; Print out our total value now
 	mov eax,[total]			; Get ready for int to string
 	call intToString		; Now, total should be in intBuffer.
 	mov edx,ecx			; Put that length in edx
 	mov ecx,eax			; Put that pointer in eax.
 	call writeValid			; Write that number
-
 
 
 ; Write a new line just to look nicer
